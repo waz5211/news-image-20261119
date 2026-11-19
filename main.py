@@ -1,18 +1,33 @@
 #!/usr/bin/env python3
-"""Entrypoint for news-image-20261119 (Python 3 standard library only).
+"""Copy the finished front page into the grader's output folder.
 
-Copies the entry.png beside this file to the output directory:
-``$MAKEFUN_OUTPUT_DIR/entry.png`` (default ``/output/entry.png``).
-Deterministic: a plain file copy, no timestamps or randomness.
+The image is drawn by build_image.py and stored next to this file as
+entry.png. This program does nothing clever on purpose: it copies those
+bytes to $MAKEFUN_OUTPUT_DIR/entry.png so both runs agree exactly.
 """
+
 import os
 import shutil
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "entry.png")
-OUT_DIR = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-DST = os.path.join(OUT_DIR, "entry.png")
 
-os.makedirs(OUT_DIR, exist_ok=True)
-shutil.copyfile(SRC, DST)
-print(f"copied {SRC} -> {DST}")
+
+def main() -> int:
+    source = os.path.join(HERE, "entry.png")
+    with open(source, "rb") as handle:
+        magic = handle.read(8)
+    if magic != b"\x89PNG\r\n\x1a\n":
+        print(f"error: {source} is not a PNG file", file=sys.stderr)
+        return 1
+    target_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(target_dir, exist_ok=True)
+    target = os.path.join(target_dir, "entry.png")
+    shutil.copyfile(source, target)
+    size = os.path.getsize(target)
+    print(f"copied {source} -> {target} ({size} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
